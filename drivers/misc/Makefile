@@ -40,4 +40,5 @@ obj-$(CONFIG_VIB_GPIO)		+= vib-gpio.o
 obj-$(CONFIG_TWL6040_VIB)	+= twl6040-vib.o
 obj-$(CONFIG_VIB_OMAP_PWM)	+= vib-omap-pwm.o
 obj-$(CONFIG_WL127X_TEST)	+= wl127x-test.o
+obj-${CONFIG_ENCORE_MODEM_MGR}  += encore_modem_mgr.o
 obj-y				+= ti-st/

@@ -22,6 +22,16 @@ config PDA_POWER
 	  one or two external power supplies (AC/USB) connected to main and
 	  backup batteries, and optional builtin charger.
 
+config PDA2_POWER
+	tristate "Generic PDA/phone power driver - v2"
+	depends on !S390
+	help
+	  Say Y here to enable generic power driver for PDAs and phones with
+	  one or two external power supplies (AC/USB) connected to main and
+	  backup batteries, and optional builtin charger. This driver
+	  requires different plug/unplug event notifications than the
+	  original PDA_POWER.
+
 config APM_POWER
 	tristate "APM emulation for class batteries"
 	depends on APM_EMULATION
@@ -97,11 +107,23 @@ config BATTERY_WM97XX
 	help
 	  Say Y to enable support for battery measured by WM97xx aux port.
 
+config BATTERY_MAX17042
+	tristate "MAX17042 gas gauge driver"
+	depends on I2C
+	help
+	  Say Y here to enable support for chip MAX17042 gas gauge.
+
 config BATTERY_BQ27x00
 	tristate "BQ27200 battery driver"
 	depends on I2C
 	help
 	  Say Y here to enable support for batteries with BQ27200(I2C) chip.
+
+config BATTERY_BQ27510
+        tristate "BQ27510 battery driver"
+        depends on I2C
+        help
+          Say Y here to enable support for batteries with BQ27510(I2C) chip.
 
 config BATTERY_DA9030
 	tristate "DA9030 battery driver"
@@ -135,5 +157,11 @@ config BATTERY_CPCAP
 	depends on MFD_CPCAP
 	help
 	 Say Y to include support for CPCAP Main Battery.
+
+config CHARGER_MAX8903
+	tristate "MAX8903 charger driver"
+	depends on BATTERY_MAX17042 && GENERIC_GPIO
+	help
+	Say Y here to enable support for MAXIM8903 charger
 
 endif # POWER_SUPPLY

@@ -638,6 +638,7 @@ extern void omap2_mcbsp_params_cfg(unsigned int id, int interface_mode,
 				struct omap_mcbsp_cfg_param *tp,
 				struct omap_mcbsp_srg_fsg_cfg *param);
 
+unsigned int omap_mcbsp_pending_status(unsigned int id);
 
 /* SPI specific API */
 void omap_mcbsp_set_spi_mode(unsigned int id, const struct omap_mcbsp_spi_cfg * spi_cfg);

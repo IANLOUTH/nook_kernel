@@ -379,7 +379,7 @@ int dispc_calc_clock_rates(unsigned long dispc_fclk_rate,
 int dispc_set_clock_div(enum omap_channel channel,
 		struct dispc_clock_info *cinfo);
 int dispc_get_clock_div(struct dispc_clock_info *cinfo);
-
+int dispc_setup_clut(u32 phy);
 
 /* VENC */
 int venc_init(struct platform_device *pdev);

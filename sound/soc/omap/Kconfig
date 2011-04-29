@@ -127,3 +127,19 @@ config SND_OMAP_SOC_ZOOM2
 	help
 	  Say Y if you want to add support for Soc audio on Zoom2 board.
 
+config SND_OMAP_SOC_OMAP3_EDP
+        tristate "SoC Audio support for OMAP3 EDP"
+        depends on SND_OMAP_SOC
+        select SND_OMAP_SOC_MCBSP
+        select SND_SOC_TLV320AIC3111
+        help
+          Say Y if you want to add support for Soc audio on OMAP3 EDP board.
+
+config SND_OMAP_SOC_OMAP3EVT_DAC3100
+	tristate "SoC Audio support for OMAP3EVT (TLV320DAC3100 codec)"
+	depends on SND_OMAP_SOC && MACH_OMAP3621_EVT1A
+	select SND_OMAP_SOC_MCBSP
+	select SND_SOC_TLV320DAC3100
+	help
+	  Say Y if you want to add support for tlv320dac3100 Soc Audio on
+	  Encore board.

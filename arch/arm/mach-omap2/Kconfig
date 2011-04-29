@@ -25,6 +25,10 @@ config ARCH_OMAP3430
 	depends on ARCH_OMAP3 && ARCH_OMAP34XX
 	select ARCH_OMAP_OTG
 
+config ARCH_OMAP3621
+	bool "OMAP3621 support"
+	depends on ARCH_OMAP3 && ARCH_OMAP34XX
+
 config OMAP_PACKAGE_CBC
        bool
 
@@ -93,12 +97,12 @@ config MACH_OMAP3_PANDORA
 
 config WIFI_CONTROL_FUNC
         bool "Enable WiFi control function abstraction"
-	depends on MACH_OMAP_ZOOM2 || MACH_SHOLES || MACH_OMAP_4430SDP || MACH_OMAP_ZOOM3
+        depends on MACH_OMAP_ZOOM2 || MACH_SHOLES || MACH_OMAP_4430SDP || MACH_OMAP_ZOOM3 || MACH_OMAP3621_EDP1 || MACH_OMAP3621_EVT1A
         help
           Enables Power/Reset/Carddetect function abstraction
 
 config TIWLAN_SDIO
-	bool "TI WLAN Enhanced SDIO Contoller support"
+	bool "TI WLAN Enhanced SDIO Controller support"
 	depends on MMC_OMAP || MMC_OMAP_MODULE || MMC_OMAP_HS || MMC_OMAP_HS_MODULE
 	help
 	   Say Y here if you want to be able to use TI's WLAN device using the
@@ -112,6 +116,17 @@ config TIWLAN_MMC_CONTROLLER
 	  Choose the number of the MMC controller that TI WLAN chip is
 	  connected to. TI WLAN has SDIO host controller that will control
 	  this MMC port.
+      
+config MMC_OMAP_CONSISTENT_NAMES
+    bool "Consistent naming of MMC devices"
+    depends on MMC_OMAP || MMC_OMAP_MODULE || MMC_OMAP_HS || MMC_OMAP_HS_MODULE
+    default "n"
+
+    help
+        Say Y here if you want the internal and external SD/MMC devices to
+        have dependable device names on every boot. When N, the internal MMC
+        will be called either mmcblk0 or mmcblk1 depending on whether or not
+        an external card is present. If unsure, say Y.
 
 config MACH_OMAP_3430SDP
 	bool "OMAP 3430 SDP board"
@@ -148,6 +163,39 @@ config MACH_OMAP_ZOOM3
 	bool "OMAP3630 Zoom3 board"
         depends on ARCH_OMAP3 && ARCH_OMAP34XX
         select OMAP_PACKAGE_CBP
+
+config MACH_OMAP3621_EDP1
+        bool "OMAP3621 EDP1 board"
+        depends on ARCH_OMAP3 && ARCH_OMAP34XX
+        select OMAP_PACKAGE_CBP
+        select ARCH_OMAP3621
+
+config MACH_OMAP3621_EVT1A
+	bool "OMAP3621 BOXER board revision EVT1A"
+	depends on ARCH_OMAP3 && ARCH_OMAP34XX
+	select ARCH_OMAP3621
+
+config WLAN_POWER_EVT1
+	bool "WLAN power support"
+	depends on MACH_OMAP3621_EVT1A
+	default "y"
+	help
+	  Has to be set for EVT1A board.
+
+choice
+	bool "SDRAM DDR memory"
+	depends on ARCH_OMAP3 && ARCH_OMAP34XX
+
+config MACH_SDRAM_HYNIX_H8MBX00U0MER0EM_OR_SAMSUNG_K4X4G303PB
+	bool "Hynix H8MBX00U0MER0EM DDR memory"
+
+config MACH_SDRAM_HYNIX_H8MBX00U0MER0EM
+	bool "Hynix H8MBX00U0MER0EM DDR memory"
+
+config MACH_SDRAM_SAMSUNG_K4X4G303PB
+	bool "Saumsung K4X4G303PB DDR memory"
+
+endchoice
 
 config MACH_SHOLES
 	bool "Motorola sholes"
@@ -211,7 +259,7 @@ config OMAP3_SDRC_AC_TIMING
 
 choice
 	bool "FlexST support"
-	depends on MACH_OMAP_ZOOM2 || MACH_OMAP_ZOOM3 || MACH_OMAP_4430SDP
+	depends on MACH_OMAP_ZOOM2 || MACH_OMAP_ZOOM3 || MACH_OMAP_4430SDP || MACH_OMAP3621_EDP1 || MACH_OMAP3621_EVT1A
 	default MACH_OMAP_FST_128x
 	help
 	  FlexST will simplify building images for OMAP3+WL127x, OMAP3+WL128x,
@@ -224,3 +272,11 @@ config MACH_OMAP_FST_WL127x
 	bool "Enable FlexST for WL127x hardware setup"
 
 endchoice
+
+config MACH_OMAP_USE_UART3
+	bool "Utilize UART3"
+	default y
+	help
+	  Select this if you want to use the UART3 module of your OMAP.
+	  Otherwise deselect it to save power
+

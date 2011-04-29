@@ -148,6 +148,20 @@ obj-$(CONFIG_MACH_OMAP_ZOOM3)		+= board-zoom3.o \
 					   board-zoom-debugboard.o \
 					   board-connectivity.o \
 					   twl4030.o
+obj-$(CONFIG_MACH_OMAP3621_EDP1)	+= board-3621_edp1.o \
+					   board-edp1-peripherals.o \
+					   board-edp1-panel.o \
+					   mmc-twl4030.o \
+					   board-edp1-wifi.o \
+					   board-connectivity.o \
+					   twl4030.o
+obj-$(CONFIG_MACH_OMAP3621_EVT1A)	+= board-evt1a.o \
+					   board-evt-peripherals.o \
+					   board-evt-panel.o \
+					   mmc-twl4030.o \
+					   board-evt-wifi.o \
+					   twl4030.o \
+                       board-evt-reboot.o
 obj-$(CONFIG_MACH_OMAP_3630SDP)		+= board-3630sdp.o \
 					   board-zoom-peripherals.o \
 					   board-zoom2-camera.o \

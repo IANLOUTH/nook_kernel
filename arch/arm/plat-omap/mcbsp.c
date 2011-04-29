@@ -160,6 +160,42 @@ static void omap_mcbsp_rx_dma_callback(int lch, u16 ch_status, void *data)
 	complete(&mcbsp_dma_rx->rx_dma_completion);
 }
 
+/**
+  * Debug function for getting the pending operation status
+  * for a serial channel. 
+  */
+
+unsigned int omap_mcbsp_pending_status(unsigned int id)
+{
+	struct omap_mcbsp *mcbsp;
+	unsigned int result = 0;
+
+	if (!omap_mcbsp_check_valid_id(id)) {
+		printk(KERN_ERR "%s: Invalid id (%d)\n", __func__, id + 1);
+		return 0;
+	}
+
+	mcbsp = id_to_mcbsp_ptr(id);
+
+	if (completion_done(&mcbsp->tx_irq_completion)) {
+		result |= 0x1;
+	}
+
+	if (completion_done(&mcbsp->rx_irq_completion)) {
+		result |= 0x2;
+	}
+
+	if (completion_done(&mcbsp->tx_dma_completion)) {
+		result |= 0x4;
+	}
+
+	if (completion_done(&mcbsp->rx_dma_completion)) {
+		result |= 0x8;
+	}
+
+	return result;
+}	
+
 /*
  * omap_mcbsp_config simply write a config to the
  * appropriate McBSP.

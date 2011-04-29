@@ -2144,8 +2144,12 @@ bad_config:
 
 	/* Android has hardcoded the sysfs path to "usb_mass_storage"
 	 * so we create a link to point to the actual path.
+	 *
+	 * XXX - This dirty hack breaks sysfs if board is well-behaved
+	 * and has actually registered usb_mass_storage platform data.
 	 */
-	sysfs_create_link( (dev->kobj).parent, &dev->kobj,"usb_mass_storage");
+	if (!machine_is_omap3621_evt1a())
+		sysfs_create_link( (dev->kobj).parent, &dev->kobj,"usb_mass_storage");
 #endif /* CONFIG_USB_GADGET_MUSB_HDRC */
 	status = 0;
 #endif

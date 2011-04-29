@@ -69,6 +69,10 @@
 #include <linux/wakelock.h>
 #include <linux/platform_device.h>
 
+#ifdef	CONFIG_ARM
+#include <asm/mach-types.h>
+#endif
+
 #include <linux/usb.h>
 #include <linux/usb_usual.h>
 #include <linux/usb/ch9.h>
@@ -1413,10 +1417,15 @@ static int do_mode_sense(struct fsg_dev *fsg, struct fsg_buffhd *bh)
 	return len;
 }
 
+static void adjust_wake_lock(struct fsg_dev *);
+
 static int do_start_stop(struct fsg_dev *fsg)
 {
+    int ums_inactive = 1;
 	struct lun	*curlun = fsg->curlun;
 	int		loej, start;
+
+	int i;
 
 	/* int immed = fsg->cmnd[1] & 0x01; */
 	loej = fsg->cmnd[4] & 0x02;
@@ -1429,6 +1438,17 @@ static int do_start_stop(struct fsg_dev *fsg)
 			curlun->unit_attention_data = SS_MEDIUM_NOT_PRESENT;
 		}
 	}
+
+    for (i = 0; i < fsg->nluns; ++i) {
+        if (backing_file_is_open(&fsg->luns[i])) {
+            ums_inactive = 0; 
+        }
+    }
+
+    if (ums_inactive) {
+        switch_set_state(&fsg->sdev, 0);
+        adjust_wake_lock(fsg);
+    }
 
 	return 0;
 }
@@ -2700,8 +2720,7 @@ static ssize_t print_switch_name(struct switch_dev *sdev, char *buf)
 
 static ssize_t print_switch_state(struct switch_dev *sdev, char *buf)
 {
-	struct fsg_dev	*fsg = container_of(sdev, struct fsg_dev, sdev);
-	return sprintf(buf, "%s\n", (fsg->config ? "online" : "offline"));
+	return sprintf(buf, "%s\n", ((switch_get_state(sdev) != 0) ? "online" : "offline"));
 }
 
 static void
@@ -2796,8 +2815,12 @@ fsg_function_bind(struct usb_configuration *c, struct usb_function *f)
 
 		/* Android has harcoded the path to the lun inside usb_mass_storage/lun0
 		 * so adding a link to the gadget/lun0 on the parent of gadget.
+		 *
+		 * XXX - This dirty hack breaks sysfs if board is well-behaved
+		 * and has actually registered usb_mass_storage platform data.
 		 */
-		sysfs_create_link(((&curlun->dev)->kobj.parent)->parent,&(&curlun->dev)->kobj,"lun0");
+		if (!machine_is_omap3621_evt1a())
+			sysfs_create_link(((&curlun->dev)->kobj.parent)->parent,&(&curlun->dev)->kobj,"lun0");
 
 		if (rc != 0) {
 			ERROR(fsg, "device_create_file failed: %d\n", rc);

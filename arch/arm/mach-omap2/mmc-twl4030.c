@@ -74,10 +74,10 @@ static int twl_mmc_card_detect(int irq)
 		if (irq != mmc->slots[0].card_detect_irq)
 			continue;
 
-		/* NOTE: assumes card detect signal is active-low */
 		if (!cpu_is_omap44xx()) {
 			return !gpio_get_value_cansleep
-					(mmc->slots[0].switch_pin);
+					(mmc->slots[0].switch_pin)
+					^ mmc->slots[0].cd_active_high;
 		} else {
 			/* BIT0 of REG_MMC_CTRL
 			 * 0 - Card not present
@@ -106,8 +106,8 @@ static int twl_mmc_get_cover_state(struct device *dev, int slot)
 {
 	struct omap_mmc_platform_data *mmc = dev->platform_data;
 
-	/* NOTE: assumes card detect signal is active-low */
-	return !gpio_get_value_cansleep(mmc->slots[0].switch_pin);
+	return !gpio_get_value_cansleep(mmc->slots[0].switch_pin)
+					^ mmc->slots[0].cd_active_high;
 }
 
 /*
@@ -619,6 +619,7 @@ void __init twl4030_mmc_init(struct twl4030_hsmmc_info *controllers)
 				mmc->resume = twl_mmc_resume;
 
 				mmc->slots[0].switch_pin = c->gpio_cd;
+				mmc->slots[0].cd_active_high = c->cd_active_high;
 				mmc->slots[0].card_detect_irq =
 							gpio_to_irq(c->gpio_cd);
 				if (c->cover_only)

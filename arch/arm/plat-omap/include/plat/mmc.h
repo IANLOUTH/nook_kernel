@@ -103,6 +103,7 @@ struct omap_mmc_platform_data {
 		unsigned power_saving:1;
 
 		int switch_pin;			/* gpio (card detect) */
+		bool cd_active_high;		/* active high card detect */
 		int gpio_wp;			/* gpio (write protect) */
 
 		int (* set_bus_mode)(struct device *dev, int slot, int bus_mode);

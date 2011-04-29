@@ -15,6 +15,7 @@ struct twl4030_hsmmc_info {
 	bool	nonremovable;	/* Nonremovable e.g. eMMC */
 	bool	power_saving;	/* Try to sleep or power off when possible */
 	int	gpio_cd;	/* or -EINVAL */
+	bool	cd_active_high;	/* active high card detect */
 	int	gpio_wp;	/* or -EINVAL */
 	char	*name;		/* or NULL for default */
 	struct device *dev;	/* returned: pointer to mmc adapter */

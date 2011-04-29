@@ -378,6 +378,13 @@ config WL127X_TEST
 	---help---
 	 Creates sysfs GPIO entries for testing TI wl127x BT on board-sholes.
 
+config ENCORE_MODEM_MGR
+	bool "Encore Modem Manager"
+	default y
+	---help---
+    Provides an interface for managing the modem power state on an Encore EVT1a board.
+
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"

@@ -49,6 +49,7 @@
 #include <asm/tlbflush.h>
 
 #include <linux/delay.h>
+#include <linux/console.h>
 
 #include "cm.h"
 #include "cm-regbits-34xx.h"
@@ -78,6 +79,7 @@ static int regset_save_on_suspend;
 #define ABB_FAST_OPP	1
 #define ABB_NOMINAL_OPP	2
 
+#define OFF_MODE_CS_ERRATA      (1<<2)
 #define RTA_ERRATA_i608		(1 << 1)
 #define PER_WAKEUP_ERRATA_i582 (1 << 0)
 static u16 pm34xx_errata;
@@ -495,6 +497,37 @@ void omap_sram_idle(void)
 	/* PER */
 	per_next_state = pwrdm_read_next_pwrst(per_pwrdm);
 	core_next_state = pwrdm_read_next_pwrst(core_pwrdm);
+
+	/* Block console output in case it is on one of the OMAP UARTs */
+	if (per_next_state < PWRDM_POWER_ON || core_next_state < PWRDM_POWER_ON)
+		if (try_acquire_console_sem())
+			goto console_still_active;
+
+
+	// Workarround for the potential memory corruption on CS1, available just in case
+	// in case we try to put the CORE in OFF mode/system OFF mode, force the system to do CSWR/STDBY3 instead
+
+
+	if (IS_PM34XX_ERRATA(OFF_MODE_CS_ERRATA) &&
+	   (core_next_state == PWRDM_POWER_OFF) ) {
+
+		core_next_state = PWRDM_POWER_RET;
+		pwrdm_set_next_pwrst(core_pwrdm,core_next_state);
+
+		if (pwrdm_read_logic_pwrst(core_pwrdm) == PWRDM_POWER_OFF)
+		{
+			pwrdm_set_logic_retst(core_pwrdm, PWRDM_POWER_RET);
+		}
+    		if (pwrdm_read_mem_pwrst(core_pwrdm, 0) == PWRDM_POWER_OFF)
+    		{
+      			pwrdm_set_mem_retst(core_pwrdm, 0, PWRDM_POWER_RET);
+    		}
+    		if (pwrdm_read_mem_pwrst(core_pwrdm, 1) == PWRDM_POWER_OFF)
+    		{
+      			pwrdm_set_mem_retst(core_pwrdm, 1, PWRDM_POWER_RET);
+    		}
+ 	 }
+
 	if (IS_PM34XX_ERRATA(PER_WAKEUP_ERRATA_i582)) {
 
 		if (per_next_state == PWRDM_POWER_OFF)
@@ -744,6 +777,10 @@ void omap_sram_idle(void)
 			pwrdm_set_next_pwrst(per_pwrdm,
 					PWRDM_POWER_OFF);
 	}
+
+	release_console_sem();
+
+console_still_active:
 
 	/* Disable IO-PAD and IO-CHAIN wakeup */
 	if (core_next_state < PWRDM_POWER_ON) {
@@ -1601,7 +1638,9 @@ static int __init pwrdms_setup(struct powerdomain *pwrdm, void *unused)
 	 * changing the usb host power domain state from OFF to active once.
 	 * Disabling for now.
 	 */
-#if defined(CONFIG_MACH_OMAP_ZOOM2) || defined(CONFIG_MACH_OMAP_ZOOM3)
+#if defined(CONFIG_MACH_OMAP_ZOOM2) || defined(CONFIG_MACH_OMAP_ZOOM3)\
+	|| defined(CONFIG_MACH_OMAP3621_EDP1) \
+	|| defined(CONFIG_MACH_OMAP3621_EVT1A)
 	if (strcmp(pwrst->pwrdm->name, "usbhost_pwrdm")) {
 		if (pwrdm_has_hdwr_sar(pwrdm))
 			pwrdm_enable_hdwr_sar(pwrdm);
@@ -1686,6 +1725,13 @@ static void pm_errata_configure(void)
 	if (cpu_is_omap343x() || (cpu_is_omap3630() &&
 				(omap_rev() <= OMAP3630_REV_ES1_1))) {
 		pm34xx_errata |= PER_WAKEUP_ERRATA_i582;
+	}
+	if (cpu_is_omap3630()) {
+		
+		if ( omap_rev() < OMAP3630_REV_ES1_2) {
+		    pm34xx_errata |= OFF_MODE_CS_ERRATA;
+		    printk(KERN_INFO "Enabling OFF mode idle errata\n");
+		}
 	}
 }
 

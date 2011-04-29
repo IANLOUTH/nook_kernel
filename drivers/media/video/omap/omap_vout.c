@@ -244,9 +244,44 @@ const static struct v4l2_fmtdesc omap_formats[] = {
 
 };
 
+#ifdef CONFIG_HAS_EARLYSUSPEND
+static void omap_vout_early_suspend(struct early_suspend *handler)
+{
+	unsigned long flags;
+    struct timeval timevalue;
+	struct omap_vout_device *vout = container_of(handler, struct omap_vout_device, early_suspend);
+
+	spin_lock_irqsave(&vout->vbq_lock, flags);
+
+	vout->screen_on = 0;
+
+    if (vout->cur_frm && 
+        vout->cur_frm->state == VIDEOBUF_ACTIVE) {
+        do_gettimeofday(&timevalue);
+        vout->cur_frm->ts = timevalue;
+        vout->cur_frm->state = VIDEOBUF_DONE;
+        wake_up_interruptible(&vout->cur_frm->done);
+        vout->cur_frm = vout->next_frm;
+	}
+
+	spin_unlock_irqrestore(&vout->vbq_lock, flags);
+}
+
+static void omap_vout_late_resume(struct early_suspend *handler)
+{
+    unsigned long flags;
+	struct omap_vout_device *vout = container_of(handler, struct omap_vout_device, early_suspend);
+
+    spin_lock_irqsave(&vout->vbq_lock, flags);
+	vout->screen_on = 1;
+    spin_unlock_irqrestore(&vout->vbq_lock, flags);
+}
+#endif /* CONFIG_HAS_EARLYSUSPEND */
+
 #define NUM_OUTPUT_FORMATS (ARRAY_SIZE(omap_formats))
 
 #ifndef TILER_ALLOCATE_V4L2
+
 /* Allocate buffers */
 static unsigned long omap_vout_alloc_buffer(u32 buf_size, u32 *phys_addr)
 {
@@ -1894,7 +1929,6 @@ static int omap_vout_open(struct file *file)
 	video_vbq_ops.buf_prepare = omap_vout_buffer_prepare;
 	video_vbq_ops.buf_release = omap_vout_buffer_release;
 	video_vbq_ops.buf_queue = omap_vout_buffer_queue;
-	spin_lock_init(&vout->vbq_lock);
 
 	videobuf_queue_sg_init(q, &video_vbq_ops, NULL, &vout->vbq_lock,
 			       vout->type, V4L2_FIELD_NONE, sizeof
@@ -2595,6 +2629,10 @@ static int vidioc_dqbuf(struct file *file, void *fh,
 
 	if (!vout->streaming)
 		return -EINVAL;
+#ifdef CONFIG_HAS_EARLYSUSPEND
+	if(!vout->screen_on)
+		return -EINVAL;
+#endif
 
 	if (file->f_flags & O_NONBLOCK)
 		/* Call videobuf_dqbuf for non blocking mode */
@@ -2784,8 +2822,6 @@ static int vidioc_streamoff(struct file *file, void *fh,
 		printk(KERN_ERR VOUT_NAME "failed to change mode\n");
 		return r;
 	}
-	INIT_LIST_HEAD(&vout->dma_queue);
-
 #ifndef CONFIG_ARCH_OMAP4
 	/*release resizer now */
 	if (vout->use_isp_rsz_for_downscale) {
@@ -2802,6 +2838,8 @@ static int vidioc_streamoff(struct file *file, void *fh,
 #endif
 	videobuf_streamoff(&vout->vbq);
 	videobuf_queue_cancel(&vout->vbq);
+
+	INIT_LIST_HEAD(&vout->dma_queue);
 
 #ifdef CONFIG_PM
 	if (!cpu_is_omap44xx()) {
@@ -3026,6 +3064,8 @@ static int __init omap_vout_setup_video_data(struct omap_vout_device *vout)
 	vfd->fops = &omap_vout_fops;
 	mutex_init(&vout->lock);
 
+	spin_lock_init(&vout->vbq_lock);
+
 	vfd->minor = -1;
 	return 0;
 
@@ -3245,8 +3285,19 @@ error:
 	return r;
 
 success:
-	printk(KERN_INFO VOUT_NAME ": registered and initialized "
-			"video device %d [v4l2]\n", vfd->minor);
+
+#ifdef CONFIG_HAS_EARLYSUSPEND
+	vout->early_suspend.level   = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 2;
+	vout->early_suspend.suspend = omap_vout_early_suspend;
+	vout->early_suspend.resume  = omap_vout_late_resume;
+	register_early_suspend(&vout->early_suspend);
+
+    vout->screen_on = 1;
+#endif
+
+	printk(KERN_INFO VOUT_NAME ": registered and initialized\
+			video device %d [v4l2]\n", vfd->minor);
+
 	if (k == (pdev->num_resources - 1))
 		return 0;
 	}
@@ -3419,6 +3470,12 @@ void omap_vout_isr(void *arg, unsigned int irqstatus)
 	struct omap_dss_device *cur_display;
 	int irq = 0;
 
+#ifdef CONFIG_HAS_EARLYSUSPEND
+    if (!vout->screen_on) {
+        return;
+    }
+#endif
+
 	if (!vout->streaming)
 		return;
 
@@ -3550,7 +3607,7 @@ venc:
 
 	if (vout->linked) {
 		if (omapvid_link_en_ovl(1, addr, uv_addr)) {
-			spin_unlock(&vout->vbq_lock);
+			spin_unlock_irqrestore(&vout->vbq_lock, flags);
 			return;
 		}
 	} else {
@@ -3595,6 +3652,9 @@ static void omap_vout_cleanup_device(struct omap_vout_device *vout)
 			 * The unregister function will release the video_device
 			 * struct as well as unregistering it.
 			 */
+#ifdef CONFIG_HAS_EARLYSUSPEND
+			unregister_early_suspend(&vout->early_suspend);
+#endif
 			video_unregister_device(vfd);
 		}
 	}

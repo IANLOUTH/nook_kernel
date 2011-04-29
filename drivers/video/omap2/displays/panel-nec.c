@@ -142,7 +142,7 @@ spi_send(struct spi_device *spi, unsigned char reg_addr, unsigned char reg_data)
 	if (spi_write(spi, (unsigned char *)&data, 4))
 		printk(KERN_WARNING "error in spi_write %x\n", data);
 
-	udelay(10);
+	udelay(100);
 	return ret;
 }
 

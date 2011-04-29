@@ -28,6 +28,7 @@
 #include <linux/usb/musb.h>
 
 #include <asm/sizes.h>
+#include <asm/system.h>
 
 #include <mach/hardware.h>
 #include <mach/irqs.h>
@@ -39,6 +40,8 @@
 #define OTG_SYSC_SOFTRESET BIT(1)
 #define OTG_SYSSTATUS     0x408
 #define OTG_SYSS_RESETDONE BIT(0)
+#define BN_USB_VENDOR_ID            0x2080
+#define BN_USB_PRODUCT_ID_ENCORE    0x0002
 
 static struct platform_device dummy_pdev = {
 	.dev = {
@@ -210,23 +213,25 @@ static struct android_usb_product usb_products[] = {
 };
 
 /* standard android USB platform data */
-static struct android_usb_platform_data andusb_plat = {
-	.vendor_id		= OMAP_VENDOR_ID,
-	.product_id		= OMAP_UMS_PRODUCT_ID,
-	.manufacturer_name      = "Texas Instruments Inc.",
-	.product_name           = "OMAP-3/4",
-	.serial_number          = device_serial,
+
+static struct android_usb_platform_data android_usb_pdata = {
+	.vendor_id      = BN_USB_VENDOR_ID,
+	.product_id     = BN_USB_PRODUCT_ID_ENCORE,
+	.version        = 0x0100,
+	.product_name   = "NookColor",
+	.manufacturer_name = "B&N",
+	.serial_number  = device_serial,
 	.num_products = ARRAY_SIZE(usb_products),
-	.products = usb_products,
 	.num_functions = ARRAY_SIZE(usb_functions_all),
 	.functions = usb_functions_all,
 };
+
 
 static struct platform_device androidusb_device = {
 	.name   = "android_usb",
 	.id     = -1,
 	.dev    = {
-		.platform_data  = &andusb_plat,
+		.platform_data  = &android_usb_pdata,
 	},
 };
 
@@ -268,7 +273,7 @@ static void usb_gadget_init(void)
 		val[3] = omap_readl(reg + 0xC);
 	}
 
-	snprintf(device_serial, MAX_USB_SERIAL_NUM, "%08X%08X%08X%08X", val[3], val[2], val[1], val[0]);
+	snprintf(device_serial, sizeof(device_serial), "%08x%08x", system_serial_high, system_serial_low);
 
 #ifdef CONFIG_USB_ANDROID_RNDIS
 	/* create a fake MAC address from our serial number.

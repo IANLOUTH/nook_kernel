@@ -55,6 +55,12 @@ module_param(use_spi_crc, bool, 0);
 static int mmc_schedule_delayed_work(struct delayed_work *work,
 				     unsigned long delay)
 {
+	return queue_delayed_work(workqueue, work, delay);
+}
+
+static int mmc_schedule_delayed_work_lock(struct delayed_work *work,
+				     unsigned long delay)
+{
 	wake_lock(&mmc_delayed_work_wake_lock);
 	return queue_delayed_work(workqueue, work, delay);
 }
@@ -395,7 +401,6 @@ static int mmc_host_do_disable(struct mmc_host *host, int lazy)
 
 		host->en_dis_recurs = 1;
 		err = host->ops->disable(host, lazy);
-		wake_unlock(&mmc_delayed_work_wake_lock);
 		host->en_dis_recurs = 0;
 
 		if (err < 0) {
@@ -1055,7 +1060,7 @@ void mmc_detect_change(struct mmc_host *host, unsigned long delay)
 	spin_unlock_irqrestore(&host->lock, flags);
 #endif
 
-	mmc_schedule_delayed_work(&host->detect, delay);
+	mmc_schedule_delayed_work_lock(&host->detect, delay);
 }
 
 EXPORT_SYMBOL(mmc_detect_change);
@@ -1163,7 +1168,7 @@ out:
 		wake_unlock(&mmc_delayed_work_wake_lock);
 
 	if (host->caps & MMC_CAP_NEEDS_POLL)
-		mmc_schedule_delayed_work(&host->detect, HZ);
+		mmc_schedule_delayed_work_lock(&host->detect, HZ);
 }
 
 void mmc_start_host(struct mmc_host *host)
@@ -1273,10 +1278,13 @@ EXPORT_SYMBOL(mmc_card_sleep);
 
 int mmc_card_can_sleep(struct mmc_host *host)
 {
+#ifndef CONFIG_MACH_OMAP3621_EVT1A
 	struct mmc_card *card = host->card;
 
 	if (card && mmc_card_mmc(card) && card->ext_csd.rev >= 3)
 		return 1;
+#endif
+
 	return 0;
 }
 EXPORT_SYMBOL(mmc_card_can_sleep);
@@ -1304,6 +1312,19 @@ int mmc_suspend_host(struct mmc_host *host, pm_message_t state)
 	if (host->bus_ops && !host->bus_dead) {
 		if (host->bus_ops->suspend)
 			err = host->bus_ops->suspend(host);
+		if (err == -ENOSYS || !host->bus_ops->resume) {
+			/*
+			 * We simply "remove" the card in this case.
+			 * It will be redetected on resume.
+			 */
+			if (host->bus_ops->remove)
+				host->bus_ops->remove(host);
+			mmc_claim_host(host);
+			mmc_detach_bus(host);
+			mmc_release_host(host);
+			host->pm_flags = 0;
+			err = 0;
+		}
 	}
 	mmc_bus_put(host);
 

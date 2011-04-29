@@ -4331,6 +4331,26 @@ static void _omap_dispc_initial_config(void)
 	dispc_read_plane_fifo_sizes();
 }
 
+#define DISPC_LOADMODE			(BIT(1) | BIT(2))
+#define DISPC_PALETTEGAMMA_TABLE	(BIT(3))
+int dispc_setup_clut(u32 phy_addr)
+{
+	u32 temp;
+
+	if (!phy_addr)
+		return -ENODEV;
+
+	/* Write the address in the GFX_TABLE_BA reg */
+	dispc_write_reg(DISPC_GFX_TABLE_BA, (u32)phy_addr);
+
+	/* set the LOAD palette command */
+	temp = dispc_read_reg(DISPC_CONFIG);
+	temp |= DISPC_PALETTEGAMMA_TABLE | DISPC_LOADMODE;
+	dispc_write_reg(DISPC_CONFIG, temp);
+
+	return 0;
+}
+
 int dispc_init(void)
 {
 	u32 rev;

@@ -454,10 +454,12 @@ void musb_platform_restore_context(struct musb *musb)
 
 	musb_writeb(musb->mregs, MUSB_INDEX,
 				musb_context.index);
-
-	omap_writel(musb_context.otg_sysconfig, OTG_SYSCONFIG);
-	omap_writel(musb_context.otg_forcestandby, OTG_FORCESTDBY);
-
+#ifndef CONFIG_MACH_OMAP3621_EVT1A
+    // For Encore this is resumed via the link_state callback
+    // triggered by the twl4030 VBUS interrupt
+    omap_writel(musb_context.otg_sysconfig, OTG_SYSCONFIG);
+    omap_writel(musb_context.otg_forcestandby, OTG_FORCESTDBY);
+#endif
 }
 
 void musb_link_save_context(struct otg_transceiver *xceiv)

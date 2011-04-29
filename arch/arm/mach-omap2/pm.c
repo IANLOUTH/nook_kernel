@@ -79,6 +79,8 @@ static ssize_t vdd_opp_store(struct kobject *kobj, struct kobj_attribute *attr,
 	int flags = 0;
 	struct omap_opp *opp_table;
 
+	extern int has_1GHz_support(void);
+
 	if (sscanf(buf, "%lu", &value) != 1)
 		return -EINVAL;
 
@@ -136,7 +138,7 @@ static ssize_t vdd_opp_store(struct kobject *kobj, struct kobj_attribute *attr,
 		omap_pm_set_min_mpu_freq(&sysfs_cpufreq_dev,
 					opp_table[value].rate);
 	} else if (attr == &dsp_freq_attr) {
-		if (cpu_is_omap3630()) {
+		if (cpu_is_omap3630() && !cpu_is_omap3621()) {
 			if (value < S65M || value > S800M) {
 				printk(KERN_ERR "dsp_freq: Invalid value\n");
 				return -EINVAL;
@@ -160,6 +162,21 @@ static ssize_t vdd_opp_store(struct kobject *kobj, struct kobj_attribute *attr,
 				omap_pm_set_min_bus_tput(&sysfs_cpufreq_dev,
 						OCP_INITIATOR_AGENT, 83*1000*4);
 			else if (value == VDD2_OPP3)
+				omap_pm_set_min_bus_tput(&sysfs_cpufreq_dev,
+						OCP_INITIATOR_AGENT, 166*1000*4);
+		} else if (cpu_is_omap3622() && has_1GHz_support()) {
+			if (value == VDD2_OPP1)
+				omap_pm_set_min_bus_tput(&sysfs_cpufreq_dev,
+						OCP_INITIATOR_AGENT, 100*1000*4);
+			else if (value == VDD2_OPP2)
+				omap_pm_set_min_bus_tput(&sysfs_cpufreq_dev,
+						OCP_INITIATOR_AGENT, 200*1000*4);
+		} else if (cpu_is_omap3621() ||
+			  (cpu_is_omap3622() && !has_1GHz_support()) ) {
+			if (value == VDD2_OPP1)
+				omap_pm_set_min_bus_tput(&sysfs_cpufreq_dev,
+						OCP_INITIATOR_AGENT, 83*1000*4);
+			else if (value == VDD2_OPP2)
 				omap_pm_set_min_bus_tput(&sysfs_cpufreq_dev,
 						OCP_INITIATOR_AGENT, 166*1000*4);
 		} else if (cpu_is_omap3630()) {

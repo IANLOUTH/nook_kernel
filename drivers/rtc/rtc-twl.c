@@ -250,7 +250,7 @@ static int twl_rtc_update_irq_enable(struct device *dev, unsigned enabled)
 static int twl_rtc_read_time(struct device *dev, struct rtc_time *tm)
 {
 	unsigned char rtc_data[ALL_TIME_REGS + 1] = { 0 };
-	int ret;
+	int ret, i;
 	u8 save_control = 0;
 
 	ret = twl_rtc_read_u8(&save_control, REG_RTC_CTRL_REG);
@@ -263,15 +263,14 @@ static int twl_rtc_read_time(struct device *dev, struct rtc_time *tm)
 	if (ret < 0)
 		return ret;
 
-#ifndef CONFIG_ARCH_OMAP4
-	ret = twl_i2c_read(TWL_MODULE_RTC, rtc_data,
-			(rtc_reg_map[REG_SECONDS_REG]), ALL_TIME_REGS);
-#else
-	ret = twl_rtc_read(rtc_data, REG_SECONDS_REG, ALL_TIME_REGS);
-#endif
-	if (ret < 0) {
-		dev_err(dev, "rtc_read_time error %d\n", ret);
-		return ret;
+	for(i = 0; i < ALL_TIME_REGS; i++)
+	{
+		ret = twl_i2c_read(TWL_MODULE_RTC, &rtc_data[i], (rtc_reg_map[REG_SECONDS_REG])+i, 1);
+
+		if (ret < 0) {
+			dev_err(dev, "rtc_read_time error %d at i=%d\n", ret, i);
+			return ret;
+		}
 	}
 
 	tm->tm_sec = bcd2bin(rtc_data[0]);

@@ -23,7 +23,8 @@
 #include "board-connectivity.h"
 
 #if defined(CONFIG_MACH_OMAP_ZOOM3)\
-	|| defined(CONFIG_MACH_OMAP_ZOOM2)
+	|| defined(CONFIG_MACH_OMAP_ZOOM2)\
+	|| defined(CONFIG_MACH_OMAP3621_EDP1)
 #ifdef CONFIG_MACH_OMAP_FST_WL127x
 #define CONFIG_MACH_OMAP_FST_OMAP3_127x
 #warning zoom2 or zoom3 with wl127x
@@ -46,9 +47,14 @@
  * provide -1 is if EN GPIO not applicable for a core */
 #ifdef CONFIG_MACH_OMAP_FST_OMAP3_127x
 #define BT_EN_GPIO 109
+#ifdef CONFIG_MACH_OMAP3621_EDP1
+#define FM_EN_GPIO 14
+#else
 #define FM_EN_GPIO 161
+#endif
 #define GPS_EN_GPIO -1
 #define McBSP3_BT_GPIO 164
+
 #elif defined(CONFIG_MACH_OMAP_FST_OMAP4_128x)\
 	|| defined(CONFIG_MACH_OMAP_FST_OMAP4_127x)
 #define BT_EN_GPIO 55

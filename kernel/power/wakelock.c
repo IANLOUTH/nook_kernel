@@ -110,12 +110,15 @@ static int print_lock_stat(struct seq_file *m, struct wake_lock *lock)
 	}
 
 	return seq_printf(m,
-		     "\"%s\"\t%d\t%d\t%d\t%lld\t%lld\t%lld\t%lld\t%lld\n",
+		     "\"%s\"\t%d\t%d\t%d\t%lld\t%lld\t%lld\t%lld\t%lld\t%c%c%c\n",
 		     lock->name, lock_count, expire_count,
 		     lock->stat.wakeup_count, ktime_to_ns(active_time),
 		     ktime_to_ns(total_time),
 		     ktime_to_ns(prevent_suspend_time), ktime_to_ns(max_time),
-		     ktime_to_ns(lock->stat.last_time));
+		     ktime_to_ns(lock->stat.last_time),
+             (lock->flags & WAKE_LOCK_ACTIVE) ? 'A' : ' ',
+             (lock->flags & WAKE_LOCK_PREVENTING_SUSPEND) ? 'S' : ' ',
+             (lock->flags & WAKE_LOCK_AUTO_EXPIRE) ? 'E' : ' ');
 }
 
 static int wakelock_stats_show(struct seq_file *m, void *unused)
@@ -245,6 +248,18 @@ static long has_wake_lock_locked(int type)
 			return -1;
 	}
 	return max_timeout;
+}
+
+long has_wake_lock_debug(int type)
+{
+  	long ret;
+	unsigned long irqflags;
+	spin_lock_irqsave(&list_lock, irqflags);
+	ret = has_wake_lock_locked(type);
+	if (ret && type == WAKE_LOCK_SUSPEND)
+		print_active_locks(type);
+	spin_unlock_irqrestore(&list_lock, irqflags);
+	return ret;
 }
 
 long has_wake_lock(int type)

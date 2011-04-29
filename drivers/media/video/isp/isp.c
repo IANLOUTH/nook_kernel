@@ -1896,7 +1896,10 @@ static void isp_buf_init(struct device *dev)
 	isp_complete_reset = 1;
 	bufs->queue = 0;
 	bufs->done = 0;
-	bufs->wait_hs_vs = isp->config->wait_hs_vs;
+
+	if ((isp->config)!=0)
+		bufs->wait_hs_vs = isp->config->wait_hs_vs;
+
 	for (sg = 0; sg < NUM_BUFS; sg++) {
 		if (bufs->buf[sg].vb) {
 			bufs->buf[sg].vb->state = VIDEOBUF_ERROR;
