@@ -406,11 +406,4 @@ void hdmi_exit(void);
 void hdmi_dump_regs(struct seq_file *s);
 int hdmi_init_display(struct omap_dss_device *display);
 
-/* callback is optional */
-static inline void dss_ovl_cb(struct omapdss_ovl_cb *cb, int id, int status)
-{
-	if (cb->fn)
-		cb->fn(cb->data, id, status);
-}
-
 #endif
