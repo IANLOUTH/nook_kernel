@@ -594,7 +594,7 @@ static struct {
 
 
 	bool irq_enabled;
-	bool comp_irq_enabled;
+	u32 comp_irq_enabled;
 } dss_cache;
 
 /* propagating callback info between states */
@@ -1268,6 +1268,8 @@ void dss_setup_partial_planes(struct omap_dss_device *dssdev,
 	*hi = h;
 }
 
+static void schedule_completion_irq(void);
+
 static void dss_completion_irq_handler(void *data, u32 mask)
 {
 	struct manager_cache_data *mc;
@@ -1281,42 +1283,70 @@ static void dss_completion_irq_handler(void *data, u32 mask)
 		DISPC_IRQ_EVSYNC_ODD
 	};
 	int i;
-	bool notify = false;
 
 	spin_lock(&dss_cache.lock);
 
 	for (i = 0; i < num_mgrs; i++) {
 		mc = &dss_cache.manager_cache[i];
-		if (!(mask & masks[i]))
-			continue;
-
-		dss_ovl_cb(&mc->cb.dispc, i, DSS_COMPLETION_DISPLAYED);
-		mc->cb.dispc_displayed = true;
+		if (mask & masks[i]) {
+			dss_ovl_cb(&mc->cb.dispc, i, DSS_COMPLETION_DISPLAYED);
+			mc->cb.dispc_displayed = true;
+		}
 	}
 
 	/* notify all overlays on that manager */
 	for (i = 0; i < num_ovls; i++) {
 		oc = &dss_cache.overlay_cache[i];
-		if (oc->enabled)
-			notify = true;
-
-		if (!(mask & masks[oc->channel]))
-			continue;
-
-		dss_ovl_cb(&oc->cb.dispc, i, DSS_COMPLETION_DISPLAYED);
-		oc->cb.dispc_displayed = true;
+		if (mask & masks[oc->channel]) {
+			dss_ovl_cb(&oc->cb.dispc, i, DSS_COMPLETION_DISPLAYED);
+			oc->cb.dispc_displayed = true;
+		}
 	}
 
-	if (!notify) {
-		omap_dispc_unregister_isr(dss_completion_irq_handler, NULL,
-			DISPC_IRQ_FRAMEDONE | DISPC_IRQ_VSYNC |
-			DISPC_IRQ_FRAMEDONE2 | DISPC_IRQ_VSYNC2 |
-			/*DISPC_IRQ_FRAMEDONE_DIG |*/ DISPC_IRQ_EVSYNC_EVEN |
-			DISPC_IRQ_EVSYNC_ODD);
-		dss_cache.comp_irq_enabled = false;
-	}
+	schedule_completion_irq();
 
 	spin_unlock(&dss_cache.lock);
+}
+
+static void schedule_completion_irq(void)
+{
+	struct manager_cache_data *mc;
+	struct overlay_cache_data *oc;
+	const int num_ovls = ARRAY_SIZE(dss_cache.overlay_cache);
+	const int num_mgrs = MAX_DSS_MANAGERS;
+	const u32 masks[] = {
+		DISPC_IRQ_FRAMEDONE | DISPC_IRQ_VSYNC,
+		DISPC_IRQ_FRAMEDONE2 | DISPC_IRQ_VSYNC2,
+		/*DISPC_IRQ_FRAMEDONE_DIG |*/ DISPC_IRQ_EVSYNC_EVEN |
+		DISPC_IRQ_EVSYNC_ODD
+	};
+	u32 mask = 0;
+	int i;
+
+	for (i = 0; i < num_mgrs; i++) {
+		mc = &dss_cache.manager_cache[i];
+		if (mc->cb.dispc.fn &&
+				(mc->cb.dispc.mask & DSS_COMPLETION_DISPLAYED))
+			mask |= masks[i];
+	}
+
+	/* notify all overlays on that manager */
+	for (i = 0; i < num_ovls; i++) {
+		oc = &dss_cache.overlay_cache[i];
+		if (oc->cb.dispc.fn && oc->enabled &&
+				(oc->cb.dispc.mask & DSS_COMPLETION_DISPLAYED))
+			mask |= masks[oc->channel];
+	}
+
+	if (mask != dss_cache.comp_irq_enabled) {
+		if (dss_cache.comp_irq_enabled)
+			omap_dispc_unregister_isr(dss_completion_irq_handler,
+				NULL, dss_cache.comp_irq_enabled);
+		if (mask)
+			omap_dispc_register_isr(dss_completion_irq_handler,
+				NULL, mask);
+		dss_cache.comp_irq_enabled = mask;
+	}
 }
 
 void dss_start_update(struct omap_dss_device *dssdev)
@@ -1327,15 +1357,12 @@ void dss_start_update(struct omap_dss_device *dssdev)
 	const int num_mgrs = ARRAY_SIZE(dss_cache.manager_cache);
 	struct omap_overlay_manager *mgr;
 	int i;
-	bool notify = false;
 	unsigned long flags;
 
 	mgr = dssdev->manager;
 
 	for (i = 0; i < num_ovls; ++i) {
 		oc = &dss_cache.overlay_cache[i];
-		notify |= oc->enabled;
-
 		if (oc->channel != mgr->id)
 			continue;
 
@@ -1357,21 +1384,7 @@ void dss_start_update(struct omap_dss_device *dssdev)
 	}
 
 	spin_lock_irqsave(&dss_cache.lock, flags);
-	if (!dss_cache.comp_irq_enabled && notify) {
-		omap_dispc_register_isr(dss_completion_irq_handler, NULL,
-			DISPC_IRQ_FRAMEDONE | DISPC_IRQ_VSYNC |
-			DISPC_IRQ_FRAMEDONE2 | DISPC_IRQ_VSYNC2 |
-			/*DISPC_IRQ_FRAMEDONE_DIG |*/ DISPC_IRQ_EVSYNC_EVEN |
-			DISPC_IRQ_EVSYNC_ODD);
-		dss_cache.comp_irq_enabled = true;
-	} else if (dss_cache.comp_irq_enabled && !notify) {
-		omap_dispc_unregister_isr(dss_completion_irq_handler, NULL,
-			DISPC_IRQ_FRAMEDONE | DISPC_IRQ_VSYNC |
-			DISPC_IRQ_FRAMEDONE2 | DISPC_IRQ_VSYNC2 |
-			/*DISPC_IRQ_FRAMEDONE_DIG |*/ DISPC_IRQ_EVSYNC_EVEN |
-			DISPC_IRQ_EVSYNC_ODD);
-		dss_cache.comp_irq_enabled = false;
-	}
+	schedule_completion_irq();
 	spin_unlock_irqrestore(&dss_cache.lock, flags);
 
 	dispc_enable_lcd_out(dssdev->channel, 1);
@@ -1385,7 +1398,6 @@ static void dss_apply_irq_handler(void *data, u32 mask)
 	const int num_mgrs = ARRAY_SIZE(dss_cache.manager_cache);
 	int i, r;
 	bool mgr_busy[MAX_DSS_MANAGERS];
-	bool notify = false;
 
 	for (i = 0; i < num_mgrs; i++)
 		mgr_busy[i] = dispc_go_busy(i);
@@ -1394,8 +1406,6 @@ static void dss_apply_irq_handler(void *data, u32 mask)
 
 	for (i = 0; i < num_ovls; ++i) {
 		oc = &dss_cache.overlay_cache[i];
-		notify |= oc->enabled;
-
 		if (!mgr_busy[oc->channel] && oc->shadow_dirty) {
 			dss_ovl_program_cb(&oc->cb, i);
 			oc->dispc_channel = oc->channel;
@@ -1411,21 +1421,7 @@ static void dss_apply_irq_handler(void *data, u32 mask)
 		}
 	}
 
-	if (!dss_cache.comp_irq_enabled && notify) {
-		r = omap_dispc_register_isr(dss_completion_irq_handler, NULL,
-			DISPC_IRQ_FRAMEDONE | DISPC_IRQ_VSYNC |
-			DISPC_IRQ_FRAMEDONE2 | DISPC_IRQ_VSYNC2 |
-			/*DISPC_IRQ_FRAMEDONE_DIG |*/ DISPC_IRQ_EVSYNC_EVEN |
-			DISPC_IRQ_EVSYNC_ODD);
-		dss_cache.comp_irq_enabled = true;
-	} else if (dss_cache.comp_irq_enabled && !notify) {
-		omap_dispc_unregister_isr(dss_completion_irq_handler, NULL,
-			DISPC_IRQ_FRAMEDONE | DISPC_IRQ_VSYNC |
-			DISPC_IRQ_FRAMEDONE2 | DISPC_IRQ_VSYNC2 |
-			/*DISPC_IRQ_FRAMEDONE_DIG |*/ DISPC_IRQ_EVSYNC_EVEN |
-			DISPC_IRQ_EVSYNC_ODD);
-		dss_cache.comp_irq_enabled = false;
-	}
+	schedule_completion_irq();
 
 	r = configure_dispc();
 	if (r == 1)
