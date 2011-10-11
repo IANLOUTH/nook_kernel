@@ -726,5 +726,7 @@ enum omap_writeback_mode {
 	OMAP_WB_CAPTURE_MODE	= 0x0,
 	OMAP_WB_MEM2MEM_MODE	= 0x1,
 };
+int omap_dss_manager_unregister_callback(struct omap_overlay_manager *mgr,
+		struct omapdss_ovl_cb *cb);
 
 #endif
