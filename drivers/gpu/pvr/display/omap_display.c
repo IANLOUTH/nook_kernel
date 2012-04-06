@@ -1075,4 +1075,3 @@ int omap_display_deinit(void)
 	return err;
 }
 EXPORT_SYMBOL(omap_display_deinit);
-
