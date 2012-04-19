@@ -118,6 +118,9 @@ int omapfb_ioctl(struct fb_info *fbi, unsigned int cmd, unsigned long arg);
 int dss_mode_to_fb_mode(enum omap_color_mode dssmode,
 			struct fb_var_screeninfo *var);
 
+extern int omapfb_mode_to_dss_mode(struct fb_var_screeninfo *var,
+		enum omap_color_mode *mode);
+
 /* find the display connected to this fb, if any */
 static inline struct omap_dss_device *fb2display(struct fb_info *fbi)
 {

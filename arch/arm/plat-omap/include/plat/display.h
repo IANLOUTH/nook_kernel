@@ -24,6 +24,7 @@
 #include <linux/kobject.h>
 #include <linux/device.h>
 #include <asm/atomic.h>
+#include <linux/fb.h>
 
 #define DISPC_IRQ_FRAMEDONE		(1 << 0)
 			/* OMAP4: FRAMEDONE1: for prim LCD*/
@@ -607,6 +608,8 @@ struct omap_dss_device {
 
 	u32 clut_size;
 	int (*clut_fill)(void *ptr, u32 size);
+
+	struct blocking_notifier_head state_notifiers;
 };
 
 struct omap_dss_driver {
@@ -642,6 +645,11 @@ struct omap_dss_driver {
 	void (*set_custom_edid_timing_code)(struct omap_dss_device *dssdev,
 					    int mode, int code);
 	int (*hpd_enable)(struct omap_dss_device *dssdev);
+	int (*get_modedb)(struct omap_dss_device *dssdev,
+			struct fb_videomode *modedb,
+			int modedb_len);
+	int (*set_mode)(struct omap_dss_device *dssdev,
+			struct fb_videomode *modedb);
 };
 
 struct pico_platform_data {
