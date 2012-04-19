@@ -37,7 +37,7 @@
 
 #define MODULE_NAME	"dsscomp"
 
-#include <video/omapdss.h>
+#include <plat/display.h>
 #include <video/dsscomp.h>
 #include <plat/dsscomp.h>
 #include "dsscomp.h"
@@ -314,8 +314,12 @@ static long query_display(struct dsscomp_dev *cdev,
 	dis->state = dev->state;
 	dis->timings = dev->panel.timings;
 
+#if 0
+	/* XXX ENCORE DSSCOMP BACKPORT
+	 * NB: This value is completely unused elsewhere in kernel */
 	dis->width_in_mm = DIV_ROUND_CLOSEST(dev->panel.width_in_um, 1000);
 	dis->height_in_mm = DIV_ROUND_CLOSEST(dev->panel.height_in_um, 1000);
+#endif
 
 	/* find all overlays available for/owned by this display */
 	for (i = 0; i < cdev->num_ovls && dis->enabled; i++) {
@@ -620,7 +624,9 @@ void dsscomp_kdump(void)
 	};
 	int i;
 
+#ifdef CONFIG_DSSCOMP_DEBUG_LOG
 	dsscomp_dbg_events(&s);
+#endif
 	dsscomp_dbg_comps(&s);
 	dsscomp_dbg_gralloc(&s);
 

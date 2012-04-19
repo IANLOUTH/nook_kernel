@@ -55,6 +55,29 @@
 #define ZEROn(c, n)	memset(c, 0, sizeof(*c) * n)
 #define DEV(c)		(c->dev.this_device)
 
+/* XXX ENCORE DSSCOMP BACKPORT */
+enum omapdss_completion_status {
+	DSS_COMPLETION_PROGRAMMED	= (1 << 1),
+	DSS_COMPLETION_DISPLAYED	= (1 << 2),
+
+	DSS_COMPLETION_CHANGED_SET	= (1 << 3),
+	DSS_COMPLETION_CHANGED_CACHE	= (1 << 4),
+	DSS_COMPLETION_CHANGED		= (3 << 3),
+
+	DSS_COMPLETION_RELEASED		= (15 << 5),
+	DSS_COMPLETION_ECLIPSED_SET	= (1 << 5),
+	DSS_COMPLETION_ECLIPSED_CACHE	= (1 << 6),
+	DSS_COMPLETION_ECLIPSED_SHADOW	= (1 << 7),
+	DSS_COMPLETION_TORN		= (1 << 8),
+};
+
+struct omapdss_ovl_cb {
+	/* optional callback method */
+	u32 (*fn)(void *data, int id, int status);
+	void *data;
+	u32 mask;
+};
+
 /**
  * DSS Composition Device Driver
  *

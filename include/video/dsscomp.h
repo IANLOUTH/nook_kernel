@@ -2,7 +2,7 @@
 #define _LINUX_DSSCOMP_H
 
 #ifdef __KERNEL__
-#include <video/omapdss.h>
+#include <plat/display.h>
 #else
 
 /* exporting enumerations from arch/arm/plat-omap/include/plat/display.h */
@@ -89,6 +89,8 @@ struct omap_video_timings {
 	__u16 vbp;	/* Vertical back porch */
 };
 
+#endif
+
 /* YUV to RGB color conversion info */
 struct omap_dss_cconv_coefs {
 	__s16 ry, rcr, rcb;
@@ -104,8 +106,6 @@ struct omap_dss_cpr_coefs {
 	__s16 gr, gg, gb;
 	__s16 br, bg, bb;
 };
-
-#endif
 
 /* copy of fb_videomode */
 struct dsscomp_videomode {
