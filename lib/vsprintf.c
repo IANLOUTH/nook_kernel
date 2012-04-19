@@ -137,6 +137,8 @@ long long simple_strtoll(const char *cp, char **endp, unsigned int base)
 	return simple_strtoull(cp, endp, base);
 }
 
+/* XXX Superseded by kstrto*() functions */
+#if 0
 /**
  * strict_strtoul - convert a string to an unsigned long strictly
  * @cp: The string to be converted
@@ -282,6 +284,7 @@ int strict_strtoll(const char *cp, unsigned int base, long long *res)
 	return ret;
 }
 EXPORT_SYMBOL(strict_strtoll);
+#endif
 
 static int skip_atoi(const char **s)
 {
