@@ -2377,10 +2377,12 @@ static int _dispc_setup_plane(enum omap_plane plane,
 	unsigned int field_offset = 0;
 	bool vdma;
 
+#if 0 && defined(CONFIG_TI_TILER)
 	u8 orientation = 0;
 	struct tiler_view_orient orient;
 	unsigned long mir_x = 0, mir_y = 0;
 	unsigned long tiler_width = 0, tiler_height = 0;
+#endif
 
 	if (paddr == 0)
 		return -EINVAL;
@@ -2539,6 +2541,7 @@ static int _dispc_setup_plane(enum omap_plane plane,
 	if (fieldmode)
 		field_offset = 1;
 	if (cpu_is_omap44xx()) {
+#if 0 && defined(CONFIG_TI_TILER)
 		pix_inc = 0x1;
 		offset0 = 0x0;
 		offset1 = 0x0;
@@ -2595,6 +2598,7 @@ static int _dispc_setup_plane(enum omap_plane plane,
 		} else {
 			row_inc = 0x1;
 		}
+#endif
 	} else {
 		if (rotation_type == OMAP_DSS_ROT_DMA)
 			calc_dma_rotation_offset(rotation, mirror,
