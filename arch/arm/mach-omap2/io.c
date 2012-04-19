@@ -55,6 +55,8 @@
 
 #include <dspbridge/host_os.h>
 
+#include "omap_ion.h"
+
 /*
  * The machine specific code may provide the extra mapping besides the
  * default mapping provided here.
@@ -269,6 +271,9 @@ void __init omap2_map_common_io(void)
 
 	omap2_check_revision();
 	omap_sram_init();
+#ifdef CONFIG_ION_OMAP
+	omap_ion_init();
+#endif
 	omapfb_reserve_sdram();
 	omap_vram_reserve_sdram();
 	dspbridge_reserve_sdram();

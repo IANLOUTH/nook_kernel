@@ -25,6 +25,8 @@
 #include "mux.h"
 #include "omap3-opp.h"
 
+#include "omap_ion.h"
+
 #if defined(CONFIG_MACH_OMAP3621_EVT1A) && defined (CONFIG_MACH_SDRAM_HYNIX_H8MBX00U0MER0EM_OR_SAMSUNG_K4X4G303PB)
 #include "sdram-samsung-k4x4g303pb-or-hynix-h8mbx00u0mer-0em.h"
 #elif defined(CONFIG_MACH_OMAP3621_EVT1A) && defined (CONFIG_MACH_SDRAM_SAMSUNG_K4X4G303PB)
@@ -148,6 +150,9 @@ static void __init omap_evt_init(void)
 #ifdef CONFIG_BT_WILINK
   printk("encore: registering btwilink device.\n");
         platform_device_register(&btwilink_device);
+#endif
+#ifdef CONFIG_ION_OMAP
+	omap_register_ion();
 #endif
 
 }

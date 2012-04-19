@@ -195,3 +195,5 @@ obj-y					+= $(smc91x-m) $(smc91x-y)
 obj-$(CONFIG_OMAP_HSI_DEVICE)           += omap_hsi.o
 obj-$(CONFIG_OMAP_SSI_DEVICE)           += omap_ssi.o
 obj-$(CONFIG_ARCH_OMAP4)		+= hwspinlocks.o
+
+obj-$(CONFIG_ION_OMAP)			+= omap_ion.o
