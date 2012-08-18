@@ -533,7 +533,7 @@ static void dsscomp_early_suspend(struct early_suspend *h)
 	err = wait_event_timeout(early_suspend_wq, blank_complete,
 				 msecs_to_jiffies(500));
 	if (err == 0)
-		pr_warn("DSSCOMP: timeout blanking screen\n");
+		pr_warning("DSSCOMP: timeout blanking screen\n");
 	else
 		pr_info("DSSCOMP: blanked screen\n");
 }
