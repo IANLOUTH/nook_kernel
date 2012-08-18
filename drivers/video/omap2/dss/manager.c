@@ -1461,7 +1461,12 @@ static int omap_dss_mgr_blank(struct omap_overlay_manager *mgr,
 
 	DSSDBG("omap_dss_mgr_blank(%s,vsync=%d)\n", mgr->name, wait_for_vsync);
 
+/* XXX ENCORE DSSCOMP BACKPORT */
+#if 0
 	r_get = r = dispc_runtime_get();
+#else
+	r_get = r = 0;
+#endif
 	/* still clear cache even if failed to get clocks, just don't config */
 
 	spin_lock_irqsave(&dss_cache.lock, flags);
@@ -1506,8 +1511,11 @@ static int omap_dss_mgr_blank(struct omap_overlay_manager *mgr,
 
 		mask = DISPC_IRQ_VSYNC	| DISPC_IRQ_EVSYNC_ODD |
 			DISPC_IRQ_EVSYNC_EVEN;
+/* XXX ENCORE DSSCOMP BACKPORT */
+#if 0
 		if (dss_has_feature(FEAT_MGR_LCD2))
 			mask |= DISPC_IRQ_VSYNC2;
+#endif
 
 		r = omap_dispc_register_isr(dss_apply_irq_handler, NULL, mask);
 		dss_cache.irq_enabled = true;
@@ -1532,7 +1540,7 @@ static int omap_dss_mgr_blank(struct omap_overlay_manager *mgr,
 				oc->dispc_channel = oc->channel;
 				oc->shadow_dirty = false;
 			} else {
-				pr_warn("ovl%d-shadow is not dirty\n", i);
+				pr_warning("ovl%d-shadow is not dirty\n", i);
 			}
 		}
 
@@ -1542,17 +1550,20 @@ static int omap_dss_mgr_blank(struct omap_overlay_manager *mgr,
 			dss_ovl_program_cb(&mc->cb, i);
 			mc->shadow_dirty = false;
 		} else {
-			pr_warn("mgr%d-shadow is not dirty\n", mgr->id);
+			pr_warning("mgr%d-shadow is not dirty\n", mgr->id);
 		}
 	}
 
 	spin_unlock_irqrestore(&dss_cache.lock, flags);
 
-	if (wait_for_go)
+	if (mgr->wait_for_go)
 		mgr->wait_for_go(mgr);
 
+/* ENCORE DSSCOMP BACKPORT */
+#if 0
 	if (!r_get)
 		dispc_runtime_put();
+#endif
 
 	return r;
 }
