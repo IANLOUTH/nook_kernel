@@ -108,6 +108,10 @@ enum omap_color_mode {
 	OMAP_DSS_COLOR_ARGB16_1555	= 1 << 17, /* ARGB16-1555 */
 	OMAP_DSS_COLOR_RGBX24_32_ALGN	= 1 << 18, /* 32-msb aligned 24bit */
 	OMAP_DSS_COLOR_XRGB15	= 1 << 19, /* xRGB15: 1555*/
+	/* XXX ENCORE DSSCOMP BACKPORT */
+	OMAP_DSS_COLOR_RGBA16	= 1 << 20, /* RGBA16 - 4444 */
+	OMAP_DSS_COLOR_RGBX16	= 1 << 21, /* RGBx16 - 4444 */
+	OMAP_DSS_COLOR_XRGB16_1555	= 1 << 23, /* xRGB16 - 1555 */
 
 
 	OMAP_DSS_COLOR_GFX_OMAP2 =
@@ -691,5 +695,11 @@ int omap_dispc_wait_for_irq_interruptible_timeout(u32 irqmask,
 
 #define to_dss_driver(x) container_of((x), struct omap_dss_driver, driver)
 #define to_dss_device(x) container_of((x), struct omap_dss_device, dev)
+
+/* XXX ENCORE DSSCOMP BACKPORT */
+enum omap_writeback_mode {
+	OMAP_WB_CAPTURE_MODE	= 0x0,
+	OMAP_WB_MEM2MEM_MODE	= 0x1,
+};
 
 #endif
