@@ -447,7 +447,7 @@ static u32 dsscomp_mgr_callback(void *data, int id, int status)
 static inline bool dssdev_manually_updated(struct omap_dss_device *dev)
 {
 	return dev->caps & OMAP_DSS_DISPLAY_CAP_MANUAL_UPDATE &&
-		dev->driver->get_update_mode(dev) != OMAP_DSS_UPDATE_AUTO;
+		dev->get_update_mode(dev) != OMAP_DSS_UPDATE_AUTO;
 }
 
 /* apply composition */
@@ -644,12 +644,12 @@ skip_ovl_set:
 
 	if (!r && (d->mode & DSSCOMP_SETUP_MODE_DISPLAY)) {
 		/* cannot handle update errors, so ignore them */
-		if (dssdev_manually_updated(dssdev) && drv->update)
-			drv->update(dssdev, d->win.x,
+		if (dssdev_manually_updated(dssdev) && dssdev->update)
+			dssdev->update(dssdev, d->win.x,
 					d->win.y, d->win.w, d->win.h);
 		else
 			/* wait for sync to do smooth animations */
-			mgr->wait_for_vsync(mgr);
+			dssdev->wait_vsync(dssdev);
 	}
 
 done:
@@ -788,7 +788,10 @@ void dsscomp_dbg_comps(struct seq_file *s)
 		}
 
 		/* print manager cache */
+/* XXX ENCORE DSSCOMP BACKPORT */
+#if 0
 		mgr->dump_cb(mgr, s);
+#endif
 	}
 	mutex_unlock(&dbg_mtx);
 #endif
