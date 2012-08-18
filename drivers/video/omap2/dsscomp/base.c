@@ -203,7 +203,7 @@ int set_dss_ovl_info(struct dss2_ovl_info *oi)
 		goto done;
 
 	info.global_alpha = cfg->global_alpha;
-	info.pre_mult_alpha = cfg->pre_mult_alpha;
+	info.pre_alpha_mult = cfg->pre_mult_alpha;
 	info.rotation = cfg->rotation;
 	info.mirror = cfg->mirror;
 	info.color_mode = cfg->color_mode;
@@ -318,10 +318,13 @@ int set_dss_ovl_info(struct dss2_ovl_info *oi)
 #endif
 	}
 
+/* XXX ENCORE DSSCOMP BACKPORT */
+#if 0
 	info.max_x_decim = cfg->decim.max_x ? : 255;
 	info.max_y_decim = cfg->decim.max_y ? : 255;
 	info.min_x_decim = cfg->decim.min_x ? : 1;
 	info.min_y_decim = cfg->decim.min_y ? : 1;
+#endif
 #if 0
 	info.pic_height = cfg->height;
 
@@ -343,7 +346,10 @@ int set_dss_ovl_info(struct dss2_ovl_info *oi)
 	info.out_wb = 0;
 #endif
 
+/* XXX ENCORE DSSCOMP BACKPORT */
+#if 0
 	info.cconv = cfg->cconv;
+#endif
 
 done:
 #if 0
@@ -353,7 +359,7 @@ done:
 		info.height, info.screen_width, info.out_width, info.out_height,
 		info.pos_x, info.pos_y, info.rotation, info.mirror,
 		info.color_mode, info.zorder, info.global_alpha,
-		info.pre_mult_alpha, info.pic_height, info.field);
+		info.pre_alpha_mult, info.pic_height, info.field);
 #else
 	pr_debug("ovl%d: en=%d %x/%x (%dx%d|%d) => (%dx%d) @ (%d,%d) rot=%d "
 		"mir=%d col=%x z=%d al=%02x prem=%d\n",
@@ -361,7 +367,7 @@ done:
 		info.height, info.screen_width, info.out_width, info.out_height,
 		info.pos_x, info.pos_y, info.rotation, info.mirror,
 		info.color_mode, info.zorder, info.global_alpha,
-		info.pre_mult_alpha);
+		info.pre_alpha_mult);
 #endif
 	/* set overlay info */
 	return ovl->set_overlay_info(ovl, &info);
@@ -419,8 +425,11 @@ int set_dss_mgr_info(struct dss2_mgr_info *mi, struct omapdss_ovl_cb *cb)
 	info.trans_key = mi->trans_key;
 	info.trans_key_type = mi->trans_key_type;
 
+/* XXX ENCORE DSSCOMP BACKPORT */
+#if 0
 	info.cpr_coefs = mi->cpr_coefs;
 	info.cpr_enable = mi->cpr_enabled;
+#endif
 	info.cb = *cb;
 
 	return mgr->set_manager_info(mgr, &info);
