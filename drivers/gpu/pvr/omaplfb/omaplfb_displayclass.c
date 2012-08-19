@@ -340,7 +340,8 @@ static PVRSRV_ERROR GetDCBufferAddr(IMG_HANDLE        hDevice,
 
 	if (ppvCpuVAddr)
 	{
-#if defined(CONFIG_DSSCOMP)
+/* XXX ENCORE DSSCOMP BACKPORT */
+#if 0 && defined(CONFIG_DSSCOMP)
 		*ppvCpuVAddr = psDevInfo->sFBInfo.bIs2D ? NULL : psSystemBuffer->sCPUVAddr;
 #else
 		*ppvCpuVAddr = psSystemBuffer->sCPUVAddr;
@@ -354,14 +355,16 @@ static PVRSRV_ERROR GetDCBufferAddr(IMG_HANDLE        hDevice,
 
 	if (pbIsContiguous)
 	{
-#if defined(CONFIG_DSSCOMP)
+/* XXX ENCORE DSSCOMP BACKPORT */
+#if 0 && defined(CONFIG_DSSCOMP)
 		*pbIsContiguous = !psDevInfo->sFBInfo.bIs2D;
 #else
 		*pbIsContiguous = IMG_TRUE;
 #endif
 	}
 
-#if defined(CONFIG_DSSCOMP)
+/* XXX ENCORE DSSCOMP BACKPORT */
+#if 0 && defined(CONFIG_DSSCOMP)
 	if (psDevInfo->sFBInfo.bIs2D)
 	{
 		int i = (psSystemBuffer->sSysAddr.uiAddr - psDevInfo->sFBInfo.psPageList->uiAddr) >> PAGE_SHIFT;
@@ -498,7 +501,8 @@ static PVRSRV_ERROR CreateDCSwapChain(IMG_HANDLE hDevice,
 		IMG_UINT32 ui32SwapBuffer = i + ui32BuffersToSkip;
 		IMG_UINT32 ui32BufferOffset = ui32SwapBuffer * (IMG_UINT32)psDevInfo->sFBInfo.ulRoundedBufferSize;
 
-#if defined(CONFIG_DSSCOMP)
+/* XXX ENCORE DSSCOMP BACKPORT */
+#if 0 && defined(CONFIG_DSSCOMP)
 		if (psDevInfo->sFBInfo.bIs2D)
 		{
 			ui32BufferOffset = 0;
@@ -512,7 +516,8 @@ static PVRSRV_ERROR CreateDCSwapChain(IMG_HANDLE hDevice,
 		psBuffer[i].ulYOffset = ui32BufferOffset / psDevInfo->sFBInfo.ulByteStride;
 		psBuffer[i].psDevInfo = psDevInfo;
 
-#if defined(CONFIG_DSSCOMP)
+/* XXX ENCORE DSSCOMP BACKPORT */
+#if 0 && defined(CONFIG_DSSCOMP)
 		if (psDevInfo->sFBInfo.bIs2D)
 		{
 			psBuffer[i].sSysAddr.uiAddr += ui32SwapBuffer *
@@ -834,7 +839,8 @@ static IMG_BOOL ProcessFlipV1(IMG_HANDLE hCmdCookie,
 	{
 		psBuffer->hCmdComplete = (OMAPLFB_HANDLE)hCmdCookie;
 		psBuffer->ulSwapInterval = ulSwapInterval;
-#if defined(CONFIG_DSSCOMP)
+/* XXX ENCORE DSSCOMP BACKPORT */
+#if 0 && defined(CONFIG_DSSCOMP)
 		if (is_tiler_addr(psBuffer->sSysAddr.uiAddr))
 		{
 			IMG_UINT32 w = psBuffer->psDevInfo->sDisplayDim.ui32Width;
@@ -876,7 +882,8 @@ static IMG_BOOL ProcessFlipV1(IMG_HANDLE hCmdCookie,
 	return IMG_TRUE;
 }
 
-#if defined(CONFIG_DSSCOMP)
+/* XXX ENCORE DSSCOMP BACKPORT */
+#if 0 && defined(CONFIG_DSSCOMP)
 
 static IMG_BOOL ProcessFlipV2(IMG_HANDLE hCmdCookie,
 							  OMAPLFB_DEVINFO *psDevInfo,
@@ -1034,6 +1041,8 @@ static IMG_BOOL ProcessFlip(IMG_HANDLE  hCmdCookie,
 	}
 	else
 	{
+/* XXX ENCORE DSSCOMP BACKPORT */
+#if 0
 #if defined(CONFIG_DSSCOMP)
 		DISPLAYCLASS_FLIP_COMMAND2 *psFlipCmd2;
 		psFlipCmd2 = (DISPLAYCLASS_FLIP_COMMAND2 *)pvData;
@@ -1045,6 +1054,7 @@ static IMG_BOOL ProcessFlip(IMG_HANDLE  hCmdCookie,
 							 psFlipCmd2->ui32PrivDataLength);
 #else
 		BUG();
+#endif
 #endif
 	}
 }
@@ -1137,7 +1147,8 @@ static OMAPLFB_ERROR OMAPLFBInitFBDev(OMAPLFB_DEVINFO *psDevInfo)
 	
 	OMAPLFBPrintInfo(psDevInfo);
 
-#if defined(CONFIG_DSSCOMP)
+/* XXX ENCORE DSSCOMP BACKPORT */
+#if 0 && defined(CONFIG_DSSCOMP)
 	{
 		
 		int n = FBSize / RoundUpToMultiple(psLINFBInfo->fix.line_length * psLINFBInfo->var.yres, ulLCM);
@@ -1295,7 +1306,8 @@ static void OMAPLFBDeInitFBDev(OMAPLFB_DEVINFO *psDevInfo)
 
 	OMAPLFB_CONSOLE_LOCK();
 
-#if defined(CONFIG_DSSCOMP)
+/* XXX ENCORE DSSCOMP BACKPORT */
+#if 0 && defined(CONFIG_DSSCOMP)
 	{
 		OMAPLFB_FBINFO *psPVRFBInfo = &psDevInfo->sFBInfo;
 		kfree(psPVRFBInfo->psPageList);

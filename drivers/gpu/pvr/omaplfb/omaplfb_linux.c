@@ -265,7 +265,8 @@ void OMAPLFBFlip(OMAPLFB_DEVINFO *psDevInfo, OMAPLFB_BUFFER *psBuffer)
 
 	ulYResVirtual = psBuffer->ulYOffset + sFBVar.yres;
 
-#if defined(CONFIG_DSSCOMP)
+/* XXX ENCORE DSSCOMP BACKPORT */
+#if 0 && defined(CONFIG_DSSCOMP)
 	{
 		
 		struct fb_fix_screeninfo sFBFix = psDevInfo->psLINFBInfo->fix;
