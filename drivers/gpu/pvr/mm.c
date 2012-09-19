@@ -186,6 +186,10 @@ static DEBUG_LINUX_MEM_AREA_REC *DebugLinuxMemAreaRecordFind(LinuxMemArea *psLin
 static IMG_VOID DebugLinuxMemAreaRecordRemove(LinuxMemArea *psLinuxMemArea);
 #endif
 
+#ifdef CONFIG_OMAP3_ISP_RESIZER_ON_720P_VIDEO
+int isp_reset;
+#endif
+
 PVRSRV_ERROR
 LinuxMMInit(IMG_VOID)
 {
@@ -1160,6 +1164,15 @@ NewIONLinuxMemArea(IMG_UINT32 ui32Bytes, IMG_UINT32 ui32AreaFlags,
 				kmalloc(sizeof(IMG_CPU_PHYADDR), GFP_KERNEL);
 		psLinuxMemArea->uData.sIONTilerAlloc.pCPUPhysAddrs->uiAddr =
 				(IMG_UINTPTR_T)ion_addr;
+#ifdef CONFIG_OMAP2_VRFB
+		/* OMAP3 hack: In ICS currently there isn't a way to know when
+		video playback is started at kernel level, at which time
+		VRFB contexts have to be acquired. ION memory is use only
+		for MM scenarios, so acquiring here.
+		*/
+		omap_get_vrfb_buffer(psLinuxMemArea->uData.sIONTilerAlloc.
+					pCPUPhysAddrs->uiAddr);
+#endif
 	}
 	psLinuxMemArea->uData.sIONTilerAlloc.psIONHandle = sAllocData.handle;
 	psLinuxMemArea->ui32ByteSize = ui32Bytes;
@@ -1190,8 +1203,19 @@ FreeIONLinuxMemArea(LinuxMemArea *psLinuxMemArea)
 #if defined(DEBUG_LINUX_MEM_AREAS)
     DebugLinuxMemAreaRecordRemove(psLinuxMemArea);
 #endif
-	if (cpu_is_omap3630())
+
+	if (cpu_is_omap3630()) {
+#ifdef CONFIG_OMAP2_VRFB
+		/* OMAP3 hack: In ICS currently there isn't a way to know when
+		video playback is completed at kernel level, at which time VRFB
+		contexts have to be released. ION memory is use only for
+		MM scenarios, so freeing here.
+		*/
+		omap_free_vrfb_buffer(psLinuxMemArea->uData.sIONTilerAlloc.
+					pCPUPhysAddrs->uiAddr);
+#endif
 		kfree(psLinuxMemArea->uData.sIONTilerAlloc.pCPUPhysAddrs);
+	}
     ion_free(gpsIONClient, psLinuxMemArea->uData.sIONTilerAlloc.psIONHandle);
 
 #if defined(DEBUG_LINUX_MEMORY_ALLOCATIONS)
@@ -1200,6 +1224,9 @@ FreeIONLinuxMemArea(LinuxMemArea *psLinuxMemArea)
                               __FILE__, __LINE__);
 #endif
 
+#ifdef CONFIG_OMAP3_ISP_RESIZER_ON_720P_VIDEO
+	isp_reset = 1;
+#endif
     
     psLinuxMemArea->uData.sIONTilerAlloc.pCPUPhysAddrs = IMG_NULL;
     psLinuxMemArea->uData.sIONTilerAlloc.psIONHandle = IMG_NULL;

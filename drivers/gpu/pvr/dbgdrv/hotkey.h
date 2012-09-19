@@ -22,15 +22,39 @@
  * Imagination Technologies Ltd. <gpl-support@imgtec.com>
  * Home Park Estate, Kings Langley, Herts, WD4 8LZ, UK 
  *
- *****************************************************************************/
+ ******************************************************************************/
 
-#ifndef __IMG_LINUX_ION_H__
-#define __IMG_LINUX_ION_H__
+#ifndef _HOTKEY_
+#define _HOTKEY_
 
-#include <linux/ion.h>
-#include <linux/omap_ion.h>
 
-struct ion_handle *PVRSRVExportFDToIONHandle(int fd,
-											 struct ion_client **client);
+typedef struct _hotkeyinfo
+{
+	IMG_UINT8 ui8ScanCode;
+	IMG_UINT8 ui8Type;
+	IMG_UINT8 ui8Flag;
+	IMG_UINT8 ui8Filler1;
+	IMG_UINT32 ui32ShiftState;
+	IMG_UINT32 ui32HotKeyProc;
+	IMG_VOID *pvStream;
+	IMG_UINT32 hHotKey;			
+} HOTKEYINFO, *PHOTKEYINFO;
 
-#endif /* __IMG_LINUX_ION_H__ */
+typedef struct _privatehotkeydata
+{
+	IMG_UINT32		ui32ScanCode;
+	IMG_UINT32		ui32ShiftState;
+	HOTKEYINFO	sHotKeyInfo;
+} PRIVATEHOTKEYDATA, *PPRIVATEHOTKEYDATA;
+
+
+IMG_VOID ReadInHotKeys (IMG_VOID);
+IMG_VOID ActivateHotKeys(PDBG_STREAM psStream);
+IMG_VOID DeactivateHotKeys(IMG_VOID);
+
+IMG_VOID RemoveHotKey (IMG_UINT32 hHotKey);
+IMG_VOID DefineHotKey (IMG_UINT32 ui32ScanCode, IMG_UINT32 ui32ShiftState, PHOTKEYINFO psInfo);
+IMG_VOID RegisterKeyPressed (IMG_UINT32 ui32ScanCode, PHOTKEYINFO psInfo);
+
+#endif
+
