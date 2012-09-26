@@ -48,6 +48,9 @@
 #include "dsscomp_ispresizer.h"
 #endif
 
+/* XXX ENCORE DSSCOMP BACKPORT */
+static struct dsscomp_dev *__global_cdev;
+
 static DECLARE_WAIT_QUEUE_HEAD(waitq);
 static DEFINE_MUTEX(wait_mtx);
 
@@ -433,6 +436,12 @@ static long comp_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		struct dsscomp_setup_display_data sdis;
 	} u;
 
+	/* XXX ENCORE DSSCOMP BACKPORT
+	 * There really has to be a better way to do this, but ... I'm lazy
+	 * and this works. */
+	if (!cdev)
+		cdev = __global_cdev;
+
 	dsscomp_gralloc_init(cdev);
 
 	switch (cmd) {
@@ -569,6 +578,9 @@ static int dsscomp_probe(struct platform_device *pdev)
 	/* initialize queues */
 	dsscomp_queue_init(cdev);
 	dsscomp_gralloc_init(cdev);
+
+	/* XXX ENCORE DSSCOMP BACKPORT */
+	__global_cdev = cdev;
 
 	return 0;
 }
