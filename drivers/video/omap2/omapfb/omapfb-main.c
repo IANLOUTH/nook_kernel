@@ -29,6 +29,7 @@
 #include <linux/platform_device.h>
 #include <linux/omapfb.h>
 #include <linux/earlysuspend.h>
+#include <linux/wait.h>
 
 #include <plat/display.h>
 #include <plat/vram.h>
@@ -792,9 +793,9 @@ static int omapfb_open(struct fb_info *fbi, int user)
 
 static int omapfb_release(struct fb_info *fbi, int user)
 {
-#if 0
 	struct omapfb_info *ofbi = FB2OFB(fbi);
 	struct omapfb2_device *fbdev = ofbi->fbdev;
+#if 0
 	struct omap_dss_device *display = fb2display(fbi);
 
 	DBG("Closing fb with plane index %d\n", ofbi->id);
@@ -820,6 +821,8 @@ static int omapfb_release(struct fb_info *fbi, int user)
 		display->sync(display);
 
 	omapfb_unlock(fbdev);
+#else
+	omapfb_disable_vsync(fbdev);
 #endif
 	return 0;
 }
@@ -1349,6 +1352,9 @@ static int omapfb_blank(int blank, struct fb_info *fbi)
 				OMAP_DSS_UPDATE_MANUAL)
 			do_update = 1;
 
+		if (fbdev->vsync_active)
+			omapfb_enable_vsync(fbdev);
+
 		break;
 
 	case FB_BLANK_NORMAL:
@@ -1357,6 +1363,9 @@ static int omapfb_blank(int blank, struct fb_info *fbi)
 	case FB_BLANK_VSYNC_SUSPEND:
 	case FB_BLANK_HSYNC_SUSPEND:
 	case FB_BLANK_POWERDOWN:
+		if (fbdev->vsync_active)
+			omapfb_disable_vsync(fbdev);
+
 		if (display->state != OMAP_DSS_DISPLAY_ACTIVE)
 			goto exit;
 
@@ -2344,6 +2353,39 @@ err0:
 	return r;
 }
 
+static void omapfb_send_vsync_work(struct work_struct *work)
+{
+	struct omapfb2_device *fbdev =
+		container_of(work, typeof(*fbdev), vsync_work);
+	char buf[64];
+	char *envp[2];
+
+	snprintf(buf, sizeof(buf), "VSYNC=%llu",
+		ktime_to_ns(fbdev->vsync_timestamp));
+	envp[0] = buf;
+	envp[1] = NULL;
+	kobject_uevent_env(&fbdev->dev->kobj, KOBJ_CHANGE, envp);
+}
+static void omapfb_vsync_isr(void *data, u32 mask)
+{
+	struct omapfb2_device *fbdev = data;
+	fbdev->vsync_timestamp = ktime_get();
+	schedule_work(&fbdev->vsync_work);
+}
+
+int omapfb_enable_vsync(struct omapfb2_device *fbdev)
+{
+	int r;
+	/* TODO: should determine correct IRQ like dss_mgr_wait_for_vsync does*/
+	r = omap_dispc_register_isr(omapfb_vsync_isr, fbdev, DISPC_IRQ_VSYNC);
+	return r;
+}
+
+void omapfb_disable_vsync(struct omapfb2_device *fbdev)
+{
+	omap_dispc_unregister_isr(omapfb_vsync_isr, fbdev, DISPC_IRQ_VSYNC);
+}
+
 static int omapfb_probe(struct platform_device *pdev)
 {
 	struct omapfb2_device *fbdev = NULL;
@@ -2463,6 +2505,7 @@ static int omapfb_probe(struct platform_device *pdev)
 		}
 	}
 
+	INIT_WORK(&fbdev->vsync_work, omapfb_send_vsync_work);
 	return 0;
 
 cleanup:
@@ -2477,6 +2520,7 @@ static int omapfb_remove(struct platform_device *pdev)
 	struct omapfb2_device *fbdev = platform_get_drvdata(pdev);
 
 	/* FIXME: wait till completion of pending events */
+	/* TODO: terminate vsync thread */
 
 	omapfb_remove_sysfs(fbdev);
 

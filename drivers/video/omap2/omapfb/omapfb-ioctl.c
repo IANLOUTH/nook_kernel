@@ -483,6 +483,7 @@ int omapfb_ioctl(struct fb_info *fbi, unsigned int cmd, unsigned long arg)
 		struct omapfb_memory_read	memory_read;
 		struct omapfb_vram_info		vram_info;
 		struct omapfb_tearsync_info	tearsync_info;
+		u32				crt;
 	} p;
 
 	int r = 0;
@@ -740,6 +741,24 @@ int omapfb_ioctl(struct fb_info *fbi, unsigned int cmd, unsigned long arg)
 
 		break;
 	}
+
+	case OMAPFB_ENABLEVSYNC:
+		if (get_user(p.crt, (__u32 __user *)arg)) {
+			r = -EFAULT;
+			break;
+		}
+
+		omapfb_lock(fbdev);
+		fbdev->vsync_active = !!p.crt;
+
+		if (display->state == OMAP_DSS_DISPLAY_ACTIVE) {
+			if (p.crt)
+				omapfb_enable_vsync(fbdev);
+			else
+				omapfb_disable_vsync(fbdev);
+		}
+		omapfb_unlock(fbdev);
+		break;
 
 	default:
 		dev_err(fbdev->dev, "Unknown ioctl 0x%x\n", cmd);

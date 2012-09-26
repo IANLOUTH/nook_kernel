@@ -93,6 +93,10 @@ struct omapfb2_device {
 	struct omap_overlay *overlays[10];
 	unsigned num_managers;
 	struct omap_overlay_manager *managers[10];
+
+	bool vsync_active;
+	ktime_t vsync_timestamp;
+	struct work_struct vsync_work;
 };
 
 struct omapfb_colormode {
@@ -120,6 +124,9 @@ int dss_mode_to_fb_mode(enum omap_color_mode dssmode,
 
 extern int omapfb_mode_to_dss_mode(struct fb_var_screeninfo *var,
 		enum omap_color_mode *mode);
+
+int omapfb_enable_vsync(struct omapfb2_device *fbdev);
+void omapfb_disable_vsync(struct omapfb2_device *fbdev);
 
 /* find the display connected to this fb, if any */
 static inline struct omap_dss_device *fb2display(struct fb_info *fbi)
