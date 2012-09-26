@@ -885,7 +885,7 @@ struct platform_device omap_hdq_device = {
 
 /*-------------------------------------------------------------------------*/
 
-#if defined(CONFIG_SGX530) || defined(CONFIG_SGX540)
+#if defined(CONFIG_SGX530) || defined(CONFIG_SGX540) || defined(CONFIG_PVR_SGX)
 static struct platform_device omap_sgx_device = {
 	.name           = "pvrsrvkm",
 	.id             = -1,
