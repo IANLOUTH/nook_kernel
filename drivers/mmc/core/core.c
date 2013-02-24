@@ -135,6 +135,12 @@ mmc_start_request(struct mmc_host *host, struct mmc_request *mrq)
 	struct scatterlist *sg;
 #endif
 
+#ifdef CONFIG_DEBUG_FS
+	if (mrq->cmd->opcode == MMC_SET_BLOCK_COUNT){
+		dev_info(mmc_dev(host),"starting CMD%u arg %08x flags %08x\n",
+		  mrq->cmd->opcode,mrq->cmd->arg, mrq->cmd->flags);
+	}
+#endif
 	pr_debug("%s: starting CMD%u arg %08x flags %08x\n",
 		 mmc_hostname(host), mrq->cmd->opcode,
 		 mrq->cmd->arg, mrq->cmd->flags);

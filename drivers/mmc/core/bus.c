@@ -223,6 +223,10 @@ int mmc_add_card(struct mmc_card *card)
 {
 	int ret;
 	const char *type;
+	struct mmc_host	*host = card->host;
+	int verify_resul = 0;
+	char *mmc_prod_name;
+	int fwrev = 0;
 
 	dev_set_name(&card->dev, "%s:%04x", mmc_hostname(card->host), card->rca);
 
@@ -258,6 +262,45 @@ int mmc_add_card(struct mmc_card *card)
 	ret = device_add(&card->dev);
 	if (ret)
 		return ret;
+
+/*change commands sequence if Emmc is from Samsung beginning*/
+	if ((card->cid.manfid == MMC_SAMSUNG_MANFID)
+		&& (host->index == 0)){
+
+		/* check the product name "M8G2FA" (MMC v4) and fwrev 0x11*/
+		mmc_prod_name = & (card->cid.prod_name[0]);
+
+		fwrev = (card->raw_cid[2]) >> 16;
+		fwrev &= 0xff;
+
+		if ((fwrev == 0x11)
+			&& (strcmp(mmc_prod_name,"M8G2FA") == 0)){
+
+			verify_resul = mmc_samsung_p17_verify(card);
+
+			switch (verify_resul) {
+			 case CMD_SEQ_ORIGINAL:
+				if( mmc_samsung_p17_apply(card)){
+                                        dev_err(mmc_dev(host),"fail to Apply the Samsung P17 corruption fix \n");
+                                } else {
+                                        dev_info(mmc_dev(host),"Applied the Samsung P17 corruption fix successfully\n");
+                                }
+                                break;
+			case CMD_SEQ_MOD:
+                                dev_info(mmc_dev(host),"the Samsung P17 corruption fix has already been applied \n");
+                                break;
+                        default:
+				dev_err(mmc_dev(host),"Fail to verify the Samsung P17 \n");
+                                break;
+			}
+                } else {
+
+				dev_info(mmc_dev(host),"Samsung emmc but product name is not M8G2FA \n");
+		}
+
+	}
+/*change commands sequence if Emmc is from Samsung ending*/
+
 
 #ifdef CONFIG_DEBUG_FS
 	mmc_add_card_debugfs(card);
